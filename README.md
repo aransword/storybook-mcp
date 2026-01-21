@@ -1,6 +1,6 @@
 # 📘 Storybook MCP Server 🚀
 
-이 서버는 **Model Context Protocol (MCP)**을 통해  
+이 서버는 **Model Context Protocol (MCP)** 을 통해  
 AI 에이전트(**Cline, Roo Code, Claude Desktop** 등)가  
 로컬 **Storybook 컴포넌트 명세를 직접 읽고 분석**할 수 있도록 돕는 도구입니다.
 
@@ -46,9 +46,12 @@ VS Code의 MCP 설정 파일(Cline 설정 등)에 아래 내용을 추가합니�
   "mcpServers": {
     "storybook-mcp": {
       "command": "node",
-      "args": ["/절대경로/to/your/storybook-mcp/index.js"],
+      "args": [
+        "-y",
+        "@woori-fisa-6th/storybook-mcp"
+      ],
       "env": {
-        "STORYBOOK_URL": "http://localhost:6006"
+        "STORYBOOK_URL": "storybook_url_to_access"
       }
     }
   }
