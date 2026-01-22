@@ -1,16 +1,21 @@
 #!/usr/bin/env node
+import 'dotenv/config'; // .env 파일 자동 로드
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import puppeteer from "puppeteer";
+import express from "express";
+import cors from "cors";
 
 const STORYBOOK_URL = process.env.STORYBOOK_URL;
+const PORT = process.env.PORT || 3000;
 
 if (!STORYBOOK_URL) {
   console.error("❌ 오류: STORYBOOK_URL 환경 변수가 설정되지 않았습니다.");
+  console.error("💡 팁: .env 파일을 만들거나 실행 시 변수를 함께 입력해주세요.");
   process.exit(1);
 }
 
@@ -241,10 +246,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-async function run() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Storybook MCP Server running on stdio");
-}
+const app = express();
+app.use(cors()); // 팀원의 다양한 환경 접속 허용
 
-run().catch(e => process.exit(1));
+let sseTransport = null;
+
+app.get("/sse", async (req, res) => {
+  console.log("🔗 새로운 SSE 연결 요청됨");
+  sseTransport = new SSEServerTransport("/message", res);
+  await server.connect(sseTransport);
+});
+
+app.post("/message", async (req, res) => {
+  if (sseTransport) {
+    await sseTransport.handlePostMessage(req, res);
+  } else {
+    res.status(400).send("먼저 /sse 엔드포인트에 연결해주세요.");
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`\n🚀 Storybook MCP Server가 실행되었습니다!`);
+  console.log(`- SSE URL: http://localhost:${PORT}/sse`);
+  console.log(`- Target: ${STORYBOOK_URL}`);
+});
